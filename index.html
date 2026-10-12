@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AMR Lens: antimicrobial resistance by country</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧫</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#EDF1F4; --panel:#FFFFFF; --ink:#1B2631; --muted:#5A6878; --rule:#CBD4DD;
+  --accent:#2B4C7E; --sus:#2E8C80; --mid:#E2C15F; --res:#B02F3C;
+  --hatch:#D6DDE4;
+  --serif:"Literata", Georgia, "Times New Roman", serif;
+  --sans:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --page:#151B22; --panel:#1E2630; --ink:#E6EBF0; --muted:#9AA7B5; --rule:#33404D;
+         --accent:#8FB0E0; --hatch:#2A3540; }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font:400 15px/1.55 var(--sans)}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+
+header h1{font:700 clamp(30px,5vw,46px)/1.05 var(--serif);margin:0 0 8px;letter-spacing:-.01em}
+header p{max-width:68ch;margin:0;color:var(--muted)}
+
+.controls{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:end;margin:26px 0 14px}
+.controls label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+select{font:500 15px var(--sans);color:var(--ink);background:var(--panel);border:1px solid var(--rule);
+  border-radius:6px;padding:7px 10px;min-width:150px;max-width:100%}
+.controls label{max-width:100%}
+.seg{display:flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden;background:var(--panel)}
+.seg button{font:500 14px var(--sans);color:var(--ink);background:none;border:0;padding:7px 12px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.seg button:disabled{color:var(--rule);cursor:not-allowed}
+.note{font-size:13px;color:var(--muted);margin:0 0 10px;min-height:1.2em}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)} aside{position:static}}
+
+.gridbox{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:16px;overflow-x:auto}
+table.abg{border-collapse:separate;border-spacing:3px;font-size:13px}
+.abg th{font-weight:500;color:var(--muted);text-align:left}
+.abg thead th{vertical-align:bottom;padding:0 0 6px}
+.abg thead th span{display:inline-block;writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap}
+.abg tbody th{padding-right:10px;white-space:nowrap;font-style:italic;color:var(--ink);position:sticky;left:0;background:var(--panel);z-index:1}
+.abg td{width:40px;min-width:40px;height:34px;padding:0}
+.cell{width:100%;height:100%;border:0;border-radius:4px;font:600 12px var(--sans);cursor:pointer;color:#fff}
+.cell.obs.light{color:#1B2631}
+.cell.gap{background:repeating-linear-gradient(45deg,var(--hatch) 0 4px,transparent 4px 8px);
+  color:var(--muted);border:1px dashed var(--rule)}
+.cell[aria-pressed="true"]{outline:3px solid var(--ink);outline-offset:1px}
+.legend{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-top:14px;font-size:13px;color:var(--muted)}
+.ramp{width:160px;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--sus),var(--mid),var(--res))}
+.swatch{display:inline-block;width:18px;height:12px;vertical-align:-1px;margin-right:6px;border-radius:2px;
+  background:repeating-linear-gradient(45deg,var(--hatch) 0 3px,transparent 3px 6px);border:1px dashed var(--rule)}
+
+aside{background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:18px;position:sticky;top:16px}
+aside h2{font:700 20px/1.25 var(--serif);margin:0 0 2px}
+aside .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+.big{font:700 40px/1 var(--serif)}
+.figrow{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+.small{font-size:13px;color:var(--muted)}
+.est{border-top:1px solid var(--rule);margin-top:14px;padding-top:12px}
+.est dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0}
+.est dt{color:var(--muted)} .est dd{margin:0;font-weight:600}
+.btn{font:600 14px var(--sans);background:var(--accent);color:#fff;border:0;border-radius:6px;padding:8px 14px;cursor:pointer}
+.btn:disabled{opacity:.6;cursor:wait}
+.err{color:var(--res);font-size:13px}
+svg.trend text{font:11px var(--sans);fill:var(--muted)}
+
+section.method{margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:28px}
+@media (max-width:900px){section.method{grid-template-columns:1fr}}
+section.method h2{font:700 24px/1.2 var(--serif);margin:0 0 10px}
+section.method p,section.method li{max-width:68ch}
+table.metrics{border-collapse:collapse;width:100%;font-size:14px}
+.metrics th,.metrics td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--rule)}
+.metrics th:first-child,.metrics td:first-child{text-align:left}
+.bar{height:8px;background:var(--accent);border-radius:4px}
+.imp{display:grid;grid-template-columns:90px 1fr 46px;gap:6px 10px;align-items:center;font-size:14px}
+footer{margin-top:40px;font-size:13px;color:var(--muted);border-top:1px solid var(--rule);padding-top:14px}
+@media (prefers-reduced-motion:no-preference){.cell{transition:transform .08s} .cell:hover{transform:scale(1.08)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>AMR Lens</h1>
+  <p>How often common bacteria resist antibiotics, by country, from WHO GLASS surveillance data (2017–2020). Each square is the share of tested isolates that were resistant. Hatched squares were not reported; select one to see a model estimate.</p>
+</header>
+
+<div class="controls">
+  <label>Country<select id="country"></select></label>
+  <label>Specimen<select id="specimen"></select></label>
+  <div><div class="small" style="margin-bottom:4px">Year</div><div class="seg" id="years" role="group" aria-label="Year"></div></div>
+</div>
+<p class="note" id="note"></p>
+
+<div class="layout">
+  <div class="gridbox">
+    <table class="abg" id="grid"></table>
+    <div class="legend">
+      <span>0%</span><span class="ramp" aria-hidden="true"></span><span>100% resistant</span>
+      <span><span class="swatch"></span>Not reported</span>
+      <span>Blank: test not done for this specimen anywhere</span>
+    </div>
+  </div>
+  <aside id="detail" aria-live="polite">
+    <h2>Select a square</h2>
+    <p class="sub">See the observed value, its uncertainty and trend, or a model estimate for unreported squares.</p>
+  </aside>
+</div>
+
+<section class="method">
+  <div>
+    <h2>How good is the estimator?</h2>
+    <p>Tested by hiding whole country × bug–drug cells (all years) and predicting them from the rest: 5-fold grouped cross-validation. Error is in percentage points of resistance.</p>
+    <table class="metrics" id="metrics"></table>
+    <p class="small">The additive model is country average + bug–drug average. The forest can learn interactions; it only needs to beat the additive model to justify itself.</p>
+  </div>
+  <div>
+    <h2>What drives the estimate</h2>
+    <p class="small">Permutation importance: how much error rises when one input is shuffled.</p>
+    <div class="imp" id="imp"></div>
+    <h2 style="margin-top:24px">Read with care</h2>
+    <ul class="small">
+      <li>2019 includes 71 countries; other years only the 46 that reported every year. Compare years within a country, not global totals.</li>
+      <li>2020 coincides with COVID-19 disruption to hospital testing.</li>
+      <li>Surveillance samples skew toward sicker, hospitalised patients.</li>
+      <li>Not for choosing treatment for any patient.</li>
+    </ul>
+  </div>
+</section>
+
+<footer id="source"></footer>
+</div>
+
+<script>
+const API = "/api/predict";
+const $ = s => document.querySelector(s);
+let D, rows, byKey = new Map(), combos = new Set(), state = {};
+
+// colour ramp sus -> mid -> res
+const css = getComputedStyle(document.documentElement);
+const hex = v => css.getPropertyValue(v).trim();
+const toRGB = h => [1,3,5].map(i => parseInt(h.slice(i,i+2),16));
+const STOPS = [toRGB(hex("--sus")), toRGB(hex("--mid")), toRGB(hex("--res"))];
+function colour(p){ // p in 0..100
+  const t = Math.min(1, Math.max(0, p/100)) * 2, i = t < 1 ? 0 : 1, f = t - i;
+  const c = STOPS[i].map((a,k) => Math.round(a + (STOPS[i+1][k]-a)*f));
+  return {bg:`rgb(${c})`, light: (c[0]*.299 + c[1]*.587 + c[2]*.114) > 150};
+}
+// Wilson 95% interval for a proportion
+function wilson(k, n){
+  const z = 1.96, p = k/n, d = 1 + z*z/n;
+  const c = (p + z*z/(2*n))/d, h = z*Math.sqrt(p*(1-p)/n + z*z/(4*n*n))/d;
+  return [Math.max(0,(c-h)*100), Math.min(100,(c+h)*100)];
+}
+const key = (iso, yr, sp, pa, ab) => `${iso}|${yr}|${sp}|${pa}|${ab}`;
+const fmt = x => x < 10 ? x.toFixed(1) : Math.round(x);
+
+async function init(){
+  D = await (await fetch("data.json")).json();
+  const C = D.columns;
+  rows = D.rows.map(r => Object.fromEntries(C.map((c,i) => [c, r[i]])));
+  rows.forEach(r => {
+    byKey.set(key(r.iso3, r.year, r.specimen, r.pathogen, r.antibiotic), r);
+    combos.add(`${r.pathogen}|${r.antibiotic}|${r.specimen}`);
+  });
+  const cs = $("#country");
+  D.countries.forEach(c => cs.add(new Option(c.country, c.iso3)));
+  cs.value = D.countries.find(c => c.iso3 === "IND") ? "IND" : D.countries[0].iso3;
+  ["Blood","Urine","Stool","Genital"].forEach(s => $("#specimen").add(new Option(s, s)));
+  cs.onchange = () => { state.iso3 = cs.value; pickYear(); render(); };
+  $("#specimen").onchange = e => { state.specimen = e.target.value; render(); };
+  state = {iso3: cs.value, specimen: "Blood", year: 2020};
+  pickYear(); render(); renderMethod();
+}
+
+function yearsFor(iso){ return [...new Set(rows.filter(r => r.iso3 === iso).map(r => r.year))].sort(); }
+function pickYear(){
+  const ys = yearsFor(state.iso3);
+  if (!ys.includes(state.year)) state.year = ys[ys.length-1];
+}
+
+function render(){
+  const {iso3, specimen, year} = state;
+  const ys = yearsFor(iso3);
+  $("#years").innerHTML = "";
+  [2017,2018,2019,2020].forEach(y => {
+    const b = document.createElement("button");
+    b.textContent = y; b.disabled = !ys.includes(y);
+    b.setAttribute("aria-pressed", y === year);
+    b.onclick = () => { state.year = y; render(); };
+    $("#years").append(b);
+  });
+  $("#note").textContent = ys.length === 1
+    ? "This country appears only in 2019 in the compiled data, so there is no trend to show."
+    : "";
+
+  const pairs = [...combos].map(c => c.split("|")).filter(c => c[2] === specimen);
+  const paths = [...new Set(pairs.map(p => p[0]))].sort();
+  const abs = [...new Set(pairs.map(p => p[1]))].sort();
+  const g = $("#grid");
+  g.innerHTML = "<thead><tr><th></th>" + abs.map(a => `<th scope="col"><span>${a}</span></th>`).join("") + "</tr></thead>";
+  const tb = document.createElement("tbody");
+  paths.forEach(pa => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<th scope="row">${pa}</th>`;
+    abs.forEach(ab => {
+      const td = document.createElement("td");
+      if (combos.has(`${pa}|${ab}|${specimen}`)) {
+        const r = byKey.get(key(iso3, year, specimen, pa, ab));
+        const b = document.createElement("button");
+        b.className = "cell";
+        if (r) {
+          const p = 100*r.n_resistant/r.n_tested, c = colour(p);
+          b.classList.add("obs"); if (c.light) b.classList.add("light");
+          b.style.background = c.bg; b.textContent = Math.round(p);
+          b.setAttribute("aria-label", `${pa}, ${ab}: ${Math.round(p)}% resistant of ${r.n_tested} tested`);
+        } else {
+          b.classList.add("gap"); b.textContent = "?";
+          b.setAttribute("aria-label", `${pa}, ${ab}: not reported. Select for model estimate`);
+        }
+        b.onclick = () => { document.querySelectorAll(".cell[aria-pressed]").forEach(x => x.removeAttribute("aria-pressed"));
+                            b.setAttribute("aria-pressed","true"); detail(pa, ab, r); };
+        td.append(b);
+      }
+      tr.append(td);
+    });
+    tb.append(tr);
+  });
+  g.append(tb);
+  $("#detail").innerHTML = `<h2>Select a square</h2><p class="sub">See the observed value, its uncertainty and trend, or a model estimate for unreported squares.</p>`;
+}
+
+function trendSVG(pa, ab){
+  const pts = [2017,2018,2019,2020].map(y => {
+    const r = byKey.get(key(state.iso3, y, state.specimen, pa, ab));
+    return r ? {y, p:100*r.n_resistant/r.n_tested, ci:wilson(r.n_resistant, r.n_tested)} : null;
+  }).filter(Boolean);
+  if (pts.length < 2) return `<p class="small">Fewer than two reported years for this square, so no trend.</p>`;
+  const W=300,H=130,L=30,R=22,T=10,B=22, x = y => L + (y-2017)*(W-L-R)/3, yy = p => T + (100-p)*(H-T-B)/100;
+  let s = `<svg class="trend" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Resistance by year with 95% intervals">`;
+  [0,50,100].forEach(v => s += `<line x1="${L}" x2="${W-R}" y1="${yy(v)}" y2="${yy(v)}" stroke="var(--rule)"/><text x="${L-6}" y="${yy(v)+4}" text-anchor="end">${v}</text>`);
+  [2017,2018,2019,2020].forEach(y => s += `<text x="${x(y)}" y="${H-6}" text-anchor="middle">${y}</text>`);
+  s += `<polyline fill="none" stroke="var(--accent)" stroke-width="2" points="${pts.map(d => `${x(d.y)},${yy(d.p)}`).join(" ")}"/>`;
+  pts.forEach(d => s += `<line x1="${x(d.y)}" x2="${x(d.y)}" y1="${yy(d.ci[0])}" y2="${yy(d.ci[1])}" stroke="var(--accent)" stroke-opacity=".45" stroke-width="6" stroke-linecap="round"/><circle cx="${x(d.y)}" cy="${yy(d.p)}" r="4" fill="var(--accent)"/>`);
+  return s + "</svg>";
+}
+
+async function detail(pa, ab, r){
+  const box = $("#detail"), c = D.countries.find(c => c.iso3 === state.iso3);
+  let h = `<h2><i>${pa}</i> vs ${ab}</h2><p class="sub">${c.country}, ${state.specimen.toLowerCase()} samples, ${state.year}</p>`;
+  if (r) {
+    const p = 100*r.n_resistant/r.n_tested, [lo,hi] = wilson(r.n_resistant, r.n_tested);
+    h += `<div class="figrow"><span class="big">${fmt(p)}%</span><span class="small">${r.n_resistant} of ${r.n_tested} isolates resistant</span></div>
+          <p class="small">95% interval ${fmt(lo)}–${fmt(hi)}%${r.n_tested < 30 ? ". Few isolates: treat as rough." : ""}</p>
+          ${trendSVG(pa, ab)}`;
+  } else {
+    h += `<p>Not reported for this country, specimen and year.</p>`;
+  }
+  h += `<div class="est"><strong>${r ? "Model fit" : "Model estimate"}</strong>
+        <p class="small">${r ? "This square was in the training data, so this shows fit, not a test." : "Typical error on hidden squares: about ±" + Math.round(D.metrics.forest.mae) + " points."}</p>
+        <div id="estout"><button class="btn" id="go">Get estimate</button></div></div>`;
+  box.innerHTML = h;
+  $("#go").onclick = async () => {
+    const btn = $("#go"); btn.disabled = true; btn.textContent = "Estimating…";
+    try {
+      const res = await fetch(API, {method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({iso3:state.iso3, year:state.year, specimen:state.specimen, pathogen:pa, antibiotic:ab})});
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.detail || res.statusText);
+      $("#estout").innerHTML = `<dl><dt>Random forest</dt><dd>${j.estimates.forest}%</dd>
+        <dt>Additive baseline</dt><dd>${j.estimates.additive}%</dd></dl>
+        <p class="small">When the two disagree a lot, trust neither.</p>`;
+    } catch (e) {
+      $("#estout").innerHTML = `<p class="err">Estimate unavailable: ${e.message}. The API may be starting up; try again.</p>`;
+    }
+  };
+}
+
+function renderMethod(){
+  const names = {dummy:"Global average", additive:"Additive baseline", forest:"Random forest"};
+  $("#metrics").innerHTML = `<tr><th>Model</th><th>MAE</th><th>MAE, ≥100 isolates</th><th>R²</th></tr>` +
+    Object.entries(D.metrics).map(([k,m]) => `<tr><td>${names[k]}</td><td>${m.mae}</td><td>${m.mae_n100}</td><td>${m.r2}</td></tr>`).join("");
+  const labels = {iso3:"Country", region:"WHO region", year:"Year", specimen:"Specimen", pathogen:"Pathogen", antibiotic:"Antibiotic"};
+  const mx = Math.max(...Object.values(D.importance));
+  $("#imp").innerHTML = Object.entries(D.importance).map(([k,v]) =>
+    `<span>${labels[k]}</span><div class="bar" style="width:${Math.max(2,100*v/mx)}%"></div><span class="small">+${v}</span>`).join("");
+  $("#source").innerHTML = `Data: ${D.source} Original data: WHO GLASS reports 2021 and 2022. WHO is not responsible for this compilation or app.`;
+}
+init().catch(e => { $("#grid").outerHTML = `<p class="err">Could not load data.json: ${e.message}</p>`; });
+</script>
+</body>
+</html>
