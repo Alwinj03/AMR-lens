@@ -1,0 +1,8 @@
+# Runtime dependencies for the Vercel function.
+# scikit-learn/numpy/joblib MUST match the versions used to run train.py,
+# or the saved model may fail to load.
+fastapi==0.143.0
+scikit-learn==1.8.0
+numpy==2.4.4
+pandas==3.0.2
+joblib==1.5.3
